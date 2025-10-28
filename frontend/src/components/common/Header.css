@@ -120,6 +120,7 @@
 }
 
 .user-link,
+.orders-link,
 .admin-link,
 .login-link {
   color: var(--color-text);
@@ -128,12 +129,27 @@
 }
 
 .user-link:hover,
+.orders-link:hover,
 .admin-link:hover,
 .login-link:hover {
   color: var(--color-primary);
 }
 
-.admin-link {
+/* Unify header user actions into one button theme */
+.user-menu a,
+.user-menu button {
+  padding: 0.5rem 1rem;
+  background-color: var(--color-bg-gray);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  color: var(--color-text);
+  font-weight: 600;
+  border: none;
+}
+
+.user-menu a:hover,
+.user-menu button:hover {
+  background-color: var(--color-border);
   color: var(--color-primary);
 }
 

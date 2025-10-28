@@ -7,6 +7,7 @@ const AdminProducts = () => {
   const { isAdmin, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -22,7 +23,8 @@ const AdminProducts = () => {
     stock_quantity: 0,
     is_new: false,
     is_featured: false,
-    is_sale: false
+    is_sale: false,
+    discount_percent: 0
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -34,6 +36,7 @@ const AdminProducts = () => {
     }
     if (!authLoading) {
       loadProducts();
+      loadCategories();
     }
   }, [authLoading, navigate, isAdmin]);
 
@@ -71,6 +74,25 @@ const AdminProducts = () => {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const response = await axios.get('/api/admin/categories');
+      console.log('Categories response:', response);
+      
+      if (response.data?.data) {
+        setCategories(response.data.data);
+      } else if (Array.isArray(response)) {
+        setCategories(response);
+      } else if (response && Array.isArray(response.data)) {
+        setCategories(response.data);
+      } else {
+        setCategories([]);
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки категорий:', err);
+      setCategories([]);
+    }
+  };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Вы уверены, что хотите удалить этот товар?')) {
@@ -88,7 +110,7 @@ const AdminProducts = () => {
     }
   };
 
-  const handleEdit = (product) => {
+  const handleEdit = async (product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -100,10 +122,13 @@ const AdminProducts = () => {
       stock_quantity: product.stock_quantity,
       is_new: product.is_new || false,
       is_featured: product.is_featured || false,
-      is_sale: product.is_sale || false
+      is_sale: product.is_sale || false,
+      discount_percent: product.discount_percent || 0
     });
     setImageFile(null);
     setImagePreview(product.main_image ? `http://localhost:5000${product.main_image}` : null);
+    // Обновляем категории перед открытием формы редактирования
+    await loadCategories();
     setShowModal(true);
   };
 
@@ -136,22 +161,20 @@ const AdminProducts = () => {
       formDataToSend.append('description', formData.description || '');
       formDataToSend.append('old_price', formData.old_price ? parseFloat(formData.old_price) : '');
       
-      // Преобразуем название категории в ID
+      // Добавляем категорию
       if (formData.category_id) {
-        const categoryMap = {
-          'Кровати': 1,
-          'Шкафы': 2,
-          'Столы': 3,
-          'Гостиные': 5
-        };
-        const categoryId = categoryMap[formData.category_id] || parseInt(formData.category_id);
-        formDataToSend.append('category_id', categoryId);
+        formDataToSend.append('category_id', parseInt(formData.category_id));
       }
 
       // Добавляем статусы товара
       formDataToSend.append('is_new', formData.is_new || false);
       formDataToSend.append('is_featured', formData.is_featured || false);
       formDataToSend.append('is_sale', formData.is_sale || false);
+      
+      // Добавляем скидку если товар в распродаже
+      if (formData.is_sale && formData.discount_percent) {
+        formDataToSend.append('discount_percent', parseInt(formData.discount_percent));
+      }
       
       console.log('FormData entries:');
       for (let [key, value] of formDataToSend.entries()) {
@@ -212,7 +235,7 @@ const AdminProducts = () => {
       <h1>Управление товарами</h1>
         <button 
           className="btn btn-primary"
-          onClick={() => {
+          onClick={async () => {
             setEditingProduct(null);
             setFormData({
               name: '',
@@ -224,10 +247,13 @@ const AdminProducts = () => {
               stock_quantity: 0,
               is_new: false,
               is_featured: false,
-              is_sale: false
+              is_sale: false,
+              discount_percent: 0
             });
             setImageFile(null);
             setImagePreview(null);
+            // Обновляем категории перед открытием формы
+            await loadCategories();
             setShowModal(true);
           }}
         >
@@ -444,9 +470,11 @@ const AdminProducts = () => {
                   }}
                 >
                   <option value="">Выберите категорию</option>
-                  <option value="2">Кровати</option>
-                  <option value="7">Шкафы</option>
-                  <option value="8">Столы</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -541,6 +569,27 @@ const AdminProducts = () => {
                   Распродажа
                 </label>
               </div>
+
+              {formData.is_sale && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem' }}>Процент скидки</label>
+                  <input
+                    type="number"
+                    value={formData.discount_percent}
+                    onChange={(e) => setFormData({ ...formData, discount_percent: e.target.value })}
+                    min="0"
+                    max="100"
+                    step="1"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                    placeholder="Введите процент скидки (0-100)"
+                  />
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                 <button

@@ -101,6 +101,9 @@ const Header = () => {
                   <Link to="/profile" className="user-link" onClick={scrollToTop}>
                     {user?.first_name || 'Профиль'}
                   </Link>
+                  <Link to="/orders" className="orders-link" onClick={scrollToTop}>
+                    Мои заказы
+                  </Link>
                   {isAdmin() && (
                     <Link to="/admin" className="admin-link" onClick={scrollToTop}>
                       Админ панель
