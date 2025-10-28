@@ -41,14 +41,6 @@ const HomePage = () => {
           <div className="hero-content">
             <h1>Мебель для вашего дома</h1>
             <p>Качественная мебель по доступным ценам</p>
-            <button className="btn btn-primary btn-lg" onClick={() => {
-              const menuButton = document.querySelector('.menu-toggle');
-              if (menuButton) {
-                menuButton.click();
-              }
-            }}>
-              Меню
-            </button>
           </div>
         </div>
       </section>
